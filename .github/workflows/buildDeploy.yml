@@ -1,0 +1,59 @@
+name: Build and Deploy Maven Project
+
+on:
+  workflow_dispatch: # Allows manual trigger of the workflow
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17' # Adjust Java version as needed
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven
+
+      - name: Build with Maven
+        run: mvn clean package
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_KEY: ${{ secrets.EC2_KEY }}
+        run: |
+          # Define variables
+          PEM_FILE="ec2-key.pem"
+          APP_NAME="my-app.jar"
+
+          # Create PEM file from secret
+          echo "$EC2_KEY" > $PEM_FILE
+          chmod 600 $PEM_FILE
+
+          # Copy the built JAR to EC2
+          scp -i $PEM_FILE target/*.jar $EC2_USER@$EC2_HOST:/home/$EC2_USER/$APP_NAME
+
+          # SSH into EC2 and deploy
+          ssh -i $PEM_FILE $EC2_USER@$EC2_HOST << 'EOF'
+            # Stop any existing instance of the app
+            pkill -f $APP_NAME || true
+
+            # Run the new instance of the app
+            nohup java -jar /home/$EC2_USER/$APP_NAME > /home/$EC2_USER/app.log 2>&1 &
+EOF
