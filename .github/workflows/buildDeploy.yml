@@ -56,4 +56,4 @@ jobs:
 
             # Run the new instance of the app
             nohup java -jar /home/$EC2_USER/$APP_NAME > /home/$EC2_USER/app.log 2>&1 &
-EOF
+          EOF
