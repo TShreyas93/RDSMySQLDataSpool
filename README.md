@@ -1,4 +1,5 @@
-![image](https://github.com/user-attachments/assets/d752d288-c390-4eb6-a93e-3368ecd5e94b)
+![image](https://github.com/user-attachments/assets/829fee19-435e-467a-8397-d052be59f9a4)
+
 
 
 ## ****This is my First practise program that involves:****
